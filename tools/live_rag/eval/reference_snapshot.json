@@ -1,0 +1,345 @@
+{
+  "cases": [
+    {
+      "case_id": "name_lookup",
+      "modes": {
+        "hybrid": [
+          {
+            "log_id": 104,
+            "matched_chunk_id": "10c7580b4a20de260d44db179b87f39369b75ee5b61bb2326fe0408bf69fb83d",
+            "retrieval_sources": [
+              "lexical",
+              "semantic"
+            ],
+            "sender": "박다훈",
+            "text": "업데이트 일정은 오늘 저녁에 다시 공유할게요."
+          },
+          {
+            "log_id": 105,
+            "matched_chunk_id": "828871e95765d1bb419d48d61171731d66c27a792d3b8f4e9b62ac402cf6bee3",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "박다훈",
+            "text": "3월 5일 일정은 목요일 오후 2시입니다."
+          },
+          {
+            "log_id": 101,
+            "matched_chunk_id": "d939d7533c775baca895bb76cb10f2bf77941fcfa13cd87b1cede097aeccdadf",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "민지",
+            "text": "내일 회의는 다음 주 화요일로 미뤄졌어요."
+          }
+        ],
+        "lexical": [
+          {
+            "log_id": 104,
+            "matched_chunk_id": null,
+            "retrieval_sources": [
+              "lexical"
+            ],
+            "sender": "박다훈",
+            "text": "업데이트 일정은 오늘 저녁에 다시 공유할게요."
+          }
+        ],
+        "semantic": [
+          {
+            "log_id": 104,
+            "matched_chunk_id": "10c7580b4a20de260d44db179b87f39369b75ee5b61bb2326fe0408bf69fb83d",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "박다훈",
+            "text": "업데이트 일정은 오늘 저녁에 다시 공유할게요."
+          },
+          {
+            "log_id": 105,
+            "matched_chunk_id": "828871e95765d1bb419d48d61171731d66c27a792d3b8f4e9b62ac402cf6bee3",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "박다훈",
+            "text": "3월 5일 일정은 목요일 오후 2시입니다."
+          },
+          {
+            "log_id": 101,
+            "matched_chunk_id": "d939d7533c775baca895bb76cb10f2bf77941fcfa13cd87b1cede097aeccdadf",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "민지",
+            "text": "내일 회의는 다음 주 화요일로 미뤄졌어요."
+          }
+        ]
+      },
+      "query": "박다훈 업데이트"
+    },
+    {
+      "case_id": "paraphrase_delay",
+      "modes": {
+        "hybrid": [
+          {
+            "log_id": 101,
+            "matched_chunk_id": "d939d7533c775baca895bb76cb10f2bf77941fcfa13cd87b1cede097aeccdadf",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "민지",
+            "text": "내일 회의는 다음 주 화요일로 미뤄졌어요."
+          },
+          {
+            "log_id": 201,
+            "matched_chunk_id": "923c776e964677b571d76dfc868b9a2116b2cb104742e9d1644a08a279073657",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "유진",
+            "text": "디자인 리뷰는 금요일 오후로 옮깁니다."
+          },
+          {
+            "log_id": 301,
+            "matched_chunk_id": "df524a6f3dfce3fbb3c49f86949dff0e7cf3d58180675225cf3658ef36f90c93",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "지원",
+            "text": "오늘 새로 올라온 배포 일정은 밤 10시입니다."
+          }
+        ],
+        "lexical": [],
+        "semantic": [
+          {
+            "log_id": 101,
+            "matched_chunk_id": "d939d7533c775baca895bb76cb10f2bf77941fcfa13cd87b1cede097aeccdadf",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "민지",
+            "text": "내일 회의는 다음 주 화요일로 미뤄졌어요."
+          },
+          {
+            "log_id": 201,
+            "matched_chunk_id": "923c776e964677b571d76dfc868b9a2116b2cb104742e9d1644a08a279073657",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "유진",
+            "text": "디자인 리뷰는 금요일 오후로 옮깁니다."
+          },
+          {
+            "log_id": 301,
+            "matched_chunk_id": "df524a6f3dfce3fbb3c49f86949dff0e7cf3d58180675225cf3658ef36f90c93",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "지원",
+            "text": "오늘 새로 올라온 배포 일정은 밤 10시입니다."
+          }
+        ]
+      },
+      "query": "회의가 연기된 내용"
+    },
+    {
+      "case_id": "date_constrained",
+      "modes": {
+        "hybrid": [
+          {
+            "log_id": 105,
+            "matched_chunk_id": "828871e95765d1bb419d48d61171731d66c27a792d3b8f4e9b62ac402cf6bee3",
+            "retrieval_sources": [
+              "lexical",
+              "semantic"
+            ],
+            "sender": "박다훈",
+            "text": "3월 5일 일정은 목요일 오후 2시입니다."
+          },
+          {
+            "log_id": 201,
+            "matched_chunk_id": "923c776e964677b571d76dfc868b9a2116b2cb104742e9d1644a08a279073657",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "유진",
+            "text": "디자인 리뷰는 금요일 오후로 옮깁니다."
+          },
+          {
+            "log_id": 103,
+            "matched_chunk_id": "bb070318bde639ff80fd8dd8759c140db049a871698c615db4c848849417044b",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "지연",
+            "text": "점심은 12시 30분에 같이 먹어요."
+          }
+        ],
+        "lexical": [
+          {
+            "log_id": 105,
+            "matched_chunk_id": null,
+            "retrieval_sources": [
+              "lexical"
+            ],
+            "sender": "박다훈",
+            "text": "3월 5일 일정은 목요일 오후 2시입니다."
+          }
+        ],
+        "semantic": [
+          {
+            "log_id": 105,
+            "matched_chunk_id": "828871e95765d1bb419d48d61171731d66c27a792d3b8f4e9b62ac402cf6bee3",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "박다훈",
+            "text": "3월 5일 일정은 목요일 오후 2시입니다."
+          },
+          {
+            "log_id": 201,
+            "matched_chunk_id": "923c776e964677b571d76dfc868b9a2116b2cb104742e9d1644a08a279073657",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "유진",
+            "text": "디자인 리뷰는 금요일 오후로 옮깁니다."
+          },
+          {
+            "log_id": 103,
+            "matched_chunk_id": "bb070318bde639ff80fd8dd8759c140db049a871698c615db4c848849417044b",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "지연",
+            "text": "점심은 12시 30분에 같이 먹어요."
+          }
+        ]
+      },
+      "query": "3월 5일 일정"
+    },
+    {
+      "case_id": "speaker_filter",
+      "modes": {
+        "hybrid": [
+          {
+            "log_id": 101,
+            "matched_chunk_id": "d939d7533c775baca895bb76cb10f2bf77941fcfa13cd87b1cede097aeccdadf",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "민지",
+            "text": "내일 회의는 다음 주 화요일로 미뤄졌어요."
+          }
+        ],
+        "lexical": [],
+        "semantic": [
+          {
+            "log_id": 101,
+            "matched_chunk_id": "d939d7533c775baca895bb76cb10f2bf77941fcfa13cd87b1cede097aeccdadf",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "민지",
+            "text": "내일 회의는 다음 주 화요일로 미뤄졌어요."
+          }
+        ]
+      },
+      "query": "회의"
+    },
+    {
+      "case_id": "large_group_allowlist",
+      "modes": {
+        "hybrid": [
+          {
+            "log_id": 201,
+            "matched_chunk_id": "923c776e964677b571d76dfc868b9a2116b2cb104742e9d1644a08a279073657",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "유진",
+            "text": "디자인 리뷰는 금요일 오후로 옮깁니다."
+          },
+          {
+            "log_id": 101,
+            "matched_chunk_id": "d939d7533c775baca895bb76cb10f2bf77941fcfa13cd87b1cede097aeccdadf",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "민지",
+            "text": "내일 회의는 다음 주 화요일로 미뤄졌어요."
+          },
+          {
+            "log_id": 301,
+            "matched_chunk_id": "df524a6f3dfce3fbb3c49f86949dff0e7cf3d58180675225cf3658ef36f90c93",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "지원",
+            "text": "오늘 새로 올라온 배포 일정은 밤 10시입니다."
+          }
+        ],
+        "lexical": [],
+        "semantic": [
+          {
+            "log_id": 201,
+            "matched_chunk_id": "923c776e964677b571d76dfc868b9a2116b2cb104742e9d1644a08a279073657",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "유진",
+            "text": "디자인 리뷰는 금요일 오후로 옮깁니다."
+          },
+          {
+            "log_id": 101,
+            "matched_chunk_id": "d939d7533c775baca895bb76cb10f2bf77941fcfa13cd87b1cede097aeccdadf",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "민지",
+            "text": "내일 회의는 다음 주 화요일로 미뤄졌어요."
+          },
+          {
+            "log_id": 301,
+            "matched_chunk_id": "df524a6f3dfce3fbb3c49f86949dff0e7cf3d58180675225cf3658ef36f90c93",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "지원",
+            "text": "오늘 새로 올라온 배포 일정은 밤 10시입니다."
+          }
+        ]
+      },
+      "query": "디자인 리뷰 옮겨진 내용"
+    },
+    {
+      "case_id": "live_recent",
+      "modes": {
+        "hybrid": [
+          {
+            "log_id": 301,
+            "matched_chunk_id": "df524a6f3dfce3fbb3c49f86949dff0e7cf3d58180675225cf3658ef36f90c93",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "지원",
+            "text": "오늘 새로 올라온 배포 일정은 밤 10시입니다."
+          }
+        ],
+        "lexical": [],
+        "semantic": [
+          {
+            "log_id": 301,
+            "matched_chunk_id": "df524a6f3dfce3fbb3c49f86949dff0e7cf3d58180675225cf3658ef36f90c93",
+            "retrieval_sources": [
+              "semantic"
+            ],
+            "sender": "지원",
+            "text": "오늘 새로 올라온 배포 일정은 밤 10시입니다."
+          }
+        ]
+      },
+      "query": "오늘 새로 올라온 배포 일정"
+    }
+  ],
+  "snapshot_version": 1
+}

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+VENV_PYTHON="$REPO_ROOT/.venv/bin/python"
+
+if [[ ! -x "$REPO_ROOT/.build/release/kakaocli" ]] || [[ ! -x "$VENV_PYTHON" ]] || ! "$VENV_PYTHON" -c "import fastapi, uvicorn, huggingface_hub, numpy" >/dev/null 2>&1; then
+  "$SCRIPT_DIR/install-kakaocli" --build-only
+fi
+
+export LIVE_RAG_PYTHON="$VENV_PYTHON"
+exec "$VENV_PYTHON" "$REPO_ROOT/tools/live_rag/query.py" "$@"

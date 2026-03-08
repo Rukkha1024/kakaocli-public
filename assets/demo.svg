@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="560" viewBox="0 0 820 560">
+  <style>
+    .bg { fill: #1e1e2e; }
+    .titlebar { fill: #313244; }
+    .red { fill: #f38ba8; }
+    .yellow { fill: #f9e2af; }
+    .green { fill: #a6e3a1; }
+    .prompt { fill: #89b4fa; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; }
+    .cmd { fill: #a6e3a1; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; }
+    .dim { fill: #6c7086; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; }
+    .accent { fill: #f9e2af; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; }
+    .title { fill: #cdd6f4; font-family: -apple-system, 'SF Pro', sans-serif; font-size: 13px; }
+    .chat-name { fill: #89dceb; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; }
+    .time { fill: #6c7086; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; }
+    .msg { fill: #cdd6f4; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; }
+    .me { fill: #a6e3a1; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; }
+    .search-hl { fill: #f9e2af; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: 13px; font-weight: bold; }
+  </style>
+
+  <!-- Window frame -->
+  <rect class="bg" width="820" height="560" rx="10" ry="10"/>
+  <rect class="titlebar" width="820" height="36" rx="10" ry="10"/>
+  <rect class="titlebar" x="0" y="26" width="820" height="10"/>
+
+  <!-- Traffic lights -->
+  <circle class="red" cx="20" cy="18" r="6"/>
+  <circle class="yellow" cx="40" cy="18" r="6"/>
+  <circle class="green" cx="60" cy="18" r="6"/>
+
+  <!-- Title -->
+  <text class="title" x="410" y="22" text-anchor="middle">kakaocli — Terminal</text>
+
+  <!-- Command 1: chats -->
+  <text class="prompt" x="16" y="62">$</text>
+  <text class="cmd" x="28" y="62">kakaocli chats --limit 5</text>
+
+  <text class="chat-name" x="16" y="86">김지수</text>
+  <text class="time" x="160" y="86">19:29</text>
+  <text class="dim" x="220" y="86">2 members · direct</text>
+
+  <text class="chat-name" x="16" y="106">주말 등산 모임</text>
+  <text class="time" x="160" y="106">18:03</text>
+  <text class="dim" x="220" y="106">12 members · group</text>
+
+  <text class="chat-name" x="16" y="126">이민호</text>
+  <text class="time" x="160" y="126">17:11</text>
+  <text class="dim" x="220" y="126">2 members · direct</text>
+
+  <text class="chat-name" x="16" y="146">개발자 커뮤니티</text>
+  <text class="time" x="160" y="146">14:45</text>
+  <text class="dim" x="220" y="146">384 members · open</text>
+
+  <text class="chat-name" x="16" y="166">나와의 채팅</text>
+  <text class="time" x="160" y="166">10:28</text>
+  <text class="dim" x="220" y="166">1 member · self</text>
+
+  <!-- Command 2: search -->
+  <text class="prompt" x="16" y="206">$</text>
+  <text class="cmd" x="28" y="206">kakaocli search "점심"</text>
+
+  <text class="dim" x="16" y="230">Found 3 messages:</text>
+
+  <text class="time" x="16" y="254">02/18</text>
+  <text class="chat-name" x="64" y="254">김지수:</text>
+  <text class="msg" x="128" y="254">내일</text>
+  <text class="search-hl" x="160" y="254">점심</text>
+  <text class="msg" x="192" y="254">같이 먹을래? 강남역 근처에서</text>
+
+  <text class="time" x="16" y="274">02/15</text>
+  <text class="me" x="64" y="274">Me:</text>
+  <text class="msg" x="96" y="274">토요일</text>
+  <text class="search-hl" x="144" y="274">점심</text>
+  <text class="msg" x="176" y="274">약속 잡자!</text>
+
+  <text class="time" x="16" y="294">02/10</text>
+  <text class="chat-name" x="64" y="294">이민호:</text>
+  <text class="msg" x="128" y="294">오늘</text>
+  <text class="search-hl" x="160" y="294">점심</text>
+  <text class="msg" x="192" y="294">뭐 먹었어?</text>
+
+  <!-- Command 3: messages -->
+  <text class="prompt" x="16" y="334">$</text>
+  <text class="cmd" x="28" y="334">kakaocli messages --chat "김지수" --since 1d</text>
+
+  <text class="time" x="16" y="358">09:15</text>
+  <text class="chat-name" x="64" y="358">김지수:</text>
+  <text class="msg" x="128" y="358">오늘 회의 몇 시야?</text>
+
+  <text class="time" x="16" y="378">09:20</text>
+  <text class="me" x="64" y="378">Me:</text>
+  <text class="msg" x="96" y="378">2시! 3층 회의실에서</text>
+
+  <text class="time" x="16" y="398">09:21</text>
+  <text class="chat-name" x="64" y="398">김지수:</text>
+  <text class="msg" x="128" y="398">알겠어 고마워 ㅎㅎ</text>
+
+  <text class="time" x="16" y="418">18:30</text>
+  <text class="chat-name" x="64" y="418">김지수:</text>
+  <text class="msg" x="128" y="418">수고했어! 다음 주에 또 보자 👋</text>
+
+  <text class="time" x="16" y="438">18:35</text>
+  <text class="me" x="64" y="438">Me:</text>
+  <text class="msg" x="96" y="438">ㅇㅇ 수고~ 주말 잘 보내!</text>
+
+  <!-- Command 4: send -->
+  <text class="prompt" x="16" y="478">$</text>
+  <text class="cmd" x="28" y="478">kakaocli send "김지수" "내일 점심 같이 먹자!"</text>
+
+  <text class="dim" x="16" y="502">Opening chat: 김지수...</text>
+  <text class="dim" x="16" y="522">Message sent.</text>
+
+  <!-- Cursor -->
+  <text class="prompt" x="16" y="548">$</text>
+  <rect fill="#cdd6f4" x="28" y="537" width="8" height="16" opacity="0.7">
+    <animate attributeName="opacity" values="0.7;0;0.7" dur="1.2s" repeatCount="indefinite"/>
+  </rect>
+</svg>

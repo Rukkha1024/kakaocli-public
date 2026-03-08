@@ -1,0 +1,42 @@
+{
+  "cases": [
+    {
+      "id": "name_lookup",
+      "query": "박다훈 업데이트",
+      "expected_log_ids": [104],
+      "limit": 3
+    },
+    {
+      "id": "paraphrase_delay",
+      "query": "회의가 연기된 내용",
+      "expected_log_ids": [101],
+      "limit": 3
+    },
+    {
+      "id": "date_constrained",
+      "query": "3월 5일 일정",
+      "expected_log_ids": [105],
+      "limit": 3
+    },
+    {
+      "id": "speaker_filter",
+      "query": "회의",
+      "speaker": "민지",
+      "expected_log_ids": [101],
+      "limit": 3
+    },
+    {
+      "id": "large_group_allowlist",
+      "query": "디자인 리뷰 옮겨진 내용",
+      "expected_log_ids": [201],
+      "limit": 3
+    },
+    {
+      "id": "live_recent",
+      "query": "오늘 새로 올라온 배포 일정",
+      "expected_log_ids": [301],
+      "limit": 3,
+      "since_days": 2
+    }
+  ]
+}

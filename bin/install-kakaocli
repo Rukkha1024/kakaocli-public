@@ -1,0 +1,271 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+REQUIREMENTS_FILE="$REPO_ROOT/requirements-live-rag.txt"
+VENV_PATH="$REPO_ROOT/.venv"
+VENV_PYTHON="$VENV_PATH/bin/python"
+VENV_STAMP="$VENV_PATH/.deps-installed"
+BINARY_PATH="$REPO_ROOT/.build/release/kakaocli"
+BUILD_ONLY=0
+PYTHON_BIN=""
+
+usage() {
+  cat <<'EOF'
+Usage: ./bin/install-kakaocli [--build-only]
+
+Prepares the local kakaocli workflow on macOS:
+- ensures Homebrew sqlcipher exists
+- creates or updates the repo-local Python runtime in `.venv`
+- builds the local release binary when needed
+- runs verification checks unless --build-only is supplied
+EOF
+}
+
+log() {
+  printf '%s\n' "$*"
+}
+
+warn() {
+  printf 'WARN: %s\n' "$*" >&2
+}
+
+die() {
+  printf 'ERROR: %s\n' "$*" >&2
+  exit 1
+}
+
+log_command() {
+  printf '+'
+  for arg in "$@"; do
+    printf ' %q' "$arg"
+  done
+  printf '\n'
+}
+
+run_logged() {
+  log_command "$@"
+  "$@"
+}
+
+# Use the system Python only for timeout control during smoke checks.
+run_with_timeout() {
+  local timeout="$1"
+  shift
+  log_command "$@"
+  /usr/bin/python3 - "$timeout" "$@" <<'PY'
+import subprocess
+import sys
+
+timeout = float(sys.argv[1])
+command = sys.argv[2:]
+
+try:
+    result = subprocess.run(command, check=False, text=True, timeout=timeout)
+except subprocess.TimeoutExpired:
+    raise SystemExit(124)
+
+raise SystemExit(result.returncode)
+PY
+}
+
+append_manual_step() {
+  local step="$1"
+  local existing
+  for existing in "${MANUAL_STEPS[@]:-}"; do
+    if [[ "$existing" == "$step" ]]; then
+      return 0
+    fi
+  done
+  MANUAL_STEPS+=("$step")
+}
+
+ensure_command() {
+  local name="$1"
+  command -v "$name" >/dev/null 2>&1 || die "Missing required command: $name"
+}
+
+python_version_ok() {
+  local candidate="$1"
+  "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1
+}
+
+resolve_python_bin() {
+  local candidate
+  local resolved
+  for candidate in python3.13 python3.12 python3.11 python3.10 python3; do
+    if ! command -v "$candidate" >/dev/null 2>&1; then
+      continue
+    fi
+    resolved="$(command -v "$candidate")"
+    if python_version_ok "$resolved"; then
+      PYTHON_BIN="$resolved"
+      return 0
+    fi
+  done
+
+  if ! brew list --versions python@3.11 >/dev/null 2>&1; then
+    run_logged brew install python@3.11
+  fi
+
+  resolved="$(brew --prefix python@3.11)/bin/python3.11"
+  if [[ -x "$resolved" ]] && python_version_ok "$resolved"; then
+    PYTHON_BIN="$resolved"
+    return 0
+  fi
+
+  die "Could not resolve a Python 3.10+ interpreter."
+}
+
+ensure_sqlcipher() {
+  if brew list --versions sqlcipher >/dev/null 2>&1; then
+    log "sqlcipher already installed via Homebrew."
+    return 0
+  fi
+  run_logged brew install sqlcipher
+}
+
+ensure_python_runtime() {
+  if [[ ! -f "$REQUIREMENTS_FILE" ]]; then
+    die "Missing Python requirements: $REQUIREMENTS_FILE"
+  fi
+
+  if [[ -z "$PYTHON_BIN" ]]; then
+    die "Python interpreter was not resolved before creating the repo-local runtime."
+  fi
+
+  if [[ -x "$VENV_PYTHON" ]] && ! python_version_ok "$VENV_PYTHON"; then
+    rm -rf "$VENV_PATH"
+  fi
+
+  if [[ ! -x "$VENV_PYTHON" ]]; then
+    run_logged "$PYTHON_BIN" -m venv "$VENV_PATH"
+  fi
+
+  if [[ ! -f "$VENV_STAMP" ]] || [[ "$REQUIREMENTS_FILE" -nt "$VENV_STAMP" ]] || ! "$VENV_PYTHON" -c "import fastapi, uvicorn, huggingface_hub, numpy" >/dev/null 2>&1; then
+    run_logged "$VENV_PYTHON" -m pip install --upgrade pip
+    run_logged "$VENV_PYTHON" -m pip install -r "$REQUIREMENTS_FILE"
+    touch "$VENV_STAMP"
+  else
+    log "Using existing repo-local Python runtime at $VENV_PATH"
+  fi
+}
+
+needs_build() {
+  if [[ ! -x "$BINARY_PATH" ]]; then
+    return 0
+  fi
+
+  if [[ "$REPO_ROOT/Package.swift" -nt "$BINARY_PATH" ]]; then
+    return 0
+  fi
+
+  if [[ "$REPO_ROOT/Package.resolved" -nt "$BINARY_PATH" ]]; then
+    return 0
+  fi
+
+  find "$REPO_ROOT/Sources" "$REPO_ROOT/swift-tests" -type f -newer "$BINARY_PATH" -print -quit 2>/dev/null | grep -q .
+}
+
+build_binary() {
+  log "+ (cd $REPO_ROOT && swift build -c release)"
+  (
+    cd "$REPO_ROOT"
+    swift build -c release
+  )
+}
+
+verify_nonfatal() {
+  local label="$1"
+  shift
+  rc=0
+  run_with_timeout 20 "$@" || rc=$?
+  if [[ "$rc" -eq 0 ]]; then
+    log "$label: ok"
+    return 0
+  fi
+
+  if [[ "$rc" -eq 124 ]]; then
+    warn "$label timed out."
+  else
+    warn "$label failed with exit code $rc."
+  fi
+  return 0
+}
+
+verify_auth() {
+  rc=0
+  run_with_timeout 30 "$BINARY_PATH" auth || rc=$?
+  if [[ "$rc" -eq 0 ]]; then
+    log "auth: ok"
+    return 0
+  fi
+
+  warn "kakaocli auth failed with exit code $rc."
+  append_manual_step "Install KakaoTalk.app if it is missing on this Mac."
+  append_manual_step "Grant Full Disk Access to the terminal at System Settings > Privacy & Security > Full Disk Access."
+  append_manual_step "Launch KakaoTalk once, log in, and let it finish syncing before rerunning ./bin/install-kakaocli."
+  return "$rc"
+}
+
+print_manual_steps() {
+  if [[ "${#MANUAL_STEPS[@]}" -eq 0 ]]; then
+    return 0
+  fi
+
+  printf '\nManual steps still required:\n'
+  local step
+  for step in "${MANUAL_STEPS[@]}"; do
+    printf -- '- %s\n' "$step"
+  done
+}
+
+MANUAL_STEPS=()
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --build-only)
+      BUILD_ONLY=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "Unknown argument: $1"
+      ;;
+  esac
+done
+
+[[ "$(uname -s)" == "Darwin" ]] || die "This installer supports macOS only."
+
+ensure_command brew
+ensure_command swift
+
+resolve_python_bin
+ensure_sqlcipher
+ensure_python_runtime
+
+if needs_build; then
+  build_binary
+else
+  log "Using existing local release build at $BINARY_PATH"
+fi
+
+if [[ "$BUILD_ONLY" -eq 1 ]]; then
+  log "Build-only mode complete."
+  exit 0
+fi
+
+verify_nonfatal "status" "$BINARY_PATH" status
+verify_auth
+verify_nonfatal "login --status" "$BINARY_PATH" login --status
+
+append_manual_step "Grant Accessibility to the terminal at System Settings > Privacy & Security > Accessibility before using send, harvest, or inspect."
+print_manual_steps
+
+printf '\nReady commands:\n'
+printf '  %s\n' "./bin/kakaocli-local auth"
+printf '  %s\n' "./bin/query-kakao --json --query-text \"업데이트\""
