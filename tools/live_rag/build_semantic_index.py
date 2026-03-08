@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from .env_loader import load_repo_env
     from .embedding_client import ExternalEmbeddingClient
     from .policy import DEFAULT_POLICY_PATH, SemanticPolicy, load_semantic_policy
     from .semantic_index import (
@@ -26,6 +27,7 @@ try:
     )
     from .store import LiveRAGStore
 except ImportError:
+    from env_loader import load_repo_env
     from embedding_client import ExternalEmbeddingClient
     from policy import DEFAULT_POLICY_PATH, SemanticPolicy, load_semantic_policy
     from semantic_index import (
@@ -42,6 +44,8 @@ except ImportError:
     )
     from store import LiveRAGStore
 
+
+load_repo_env()
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parents[2] / ".data" / "live_rag.sqlite3"
 DEFAULT_BINARY = Path(__file__).resolve().parents[2] / ".build" / "release" / "kakaocli"

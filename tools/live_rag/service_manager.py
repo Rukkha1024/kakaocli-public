@@ -20,6 +20,13 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+try:
+    from .env_loader import load_repo_env
+except ImportError:
+    from env_loader import load_repo_env
+
+
+load_repo_env()
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASE_URL = os.environ.get("LIVE_RAG_BASE_URL", "http://127.0.0.1:8765")

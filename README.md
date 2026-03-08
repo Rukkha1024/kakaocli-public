@@ -118,21 +118,23 @@ When semantic retrieval is unavailable, `hybrid` falls back to lexical and repor
 
 ### Build, update, and validate semantic data
 
-Authenticate with Hugging Face first if you plan to build embeddings:
+Create a local `.env` file first if you plan to build embeddings or run semantic retrieval through the background service:
 
 ```bash
-export HF_TOKEN=hf_xxx
+cp .env.example .env
 ```
 
-Then run:
+Set `HF_TOKEN` in `.env`, then run:
 
 ```bash
 conda run -n module python tools/live_rag/build_semantic_index.py --mode update
-HF_TOKEN=hf_xxx conda run -n module python tools/live_rag/build_semantic_index.py --mode rebuild --batch-size 20 --progress
-HF_TOKEN=hf_xxx conda run -n module python tools/live_rag/validate_semantic.py --use-temp-db
+conda run -n module python tools/live_rag/build_semantic_index.py --mode rebuild --batch-size 20 --progress
+conda run -n module python tools/live_rag/validate_semantic.py --use-temp-db --backend huggingface
 ```
 
 The current policy indexes normal text messages from chats whose `member_count` is `<= 30`, unless explicitly overridden in `configs/live_rag_semantic_policy.yaml`.
+
+Direct shell environment variables still work and take precedence over `.env`.
 
 ### Background service
 

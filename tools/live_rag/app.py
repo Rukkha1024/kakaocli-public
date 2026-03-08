@@ -15,16 +15,20 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 
 try:
+    from .env_loader import load_repo_env
     from .embedding_client import ExternalEmbeddingClient
     from .semantic_index import DEFAULT_SEMANTIC_TOP_K, reciprocal_rank_fuse
     from .reranker import DEFAULT_RERANK_MODE, DEFAULT_RERANK_TOP_N, rerank_hits
     from .store import LiveRAGStore
 except ImportError:
+    from env_loader import load_repo_env
     from embedding_client import ExternalEmbeddingClient
     from semantic_index import DEFAULT_SEMANTIC_TOP_K, reciprocal_rank_fuse
     from reranker import DEFAULT_RERANK_MODE, DEFAULT_RERANK_TOP_N, rerank_hits
     from store import LiveRAGStore
 
+
+load_repo_env()
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parents[2] / ".data" / "live_rag.sqlite3"
 

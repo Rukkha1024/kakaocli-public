@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from .env_loader import load_repo_env
     from .embedding_client import ExternalEmbeddingClient
     from .eval_support import (
         DeterministicEmbeddingClient,
@@ -24,6 +25,7 @@ try:
     from .policy import DEFAULT_POLICY_PATH, SemanticPolicy, load_semantic_policy
     from .semantic_index import DEFAULT_EMBEDDING_MODEL
 except ImportError:
+    from env_loader import load_repo_env
     from embedding_client import ExternalEmbeddingClient
     from eval_support import (
         DeterministicEmbeddingClient,
@@ -39,6 +41,8 @@ except ImportError:
     from policy import DEFAULT_POLICY_PATH, SemanticPolicy, load_semantic_policy
     from semantic_index import DEFAULT_EMBEDDING_MODEL
 
+
+load_repo_env()
 
 SMOKE_QUERY = "회의가 연기됐다는 내용"
 SMOKE_EXPECTED_LOG_ID = 101
