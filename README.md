@@ -84,13 +84,61 @@ Use `--me` when testing send flows.
 
 All read commands support `--json`.
 
+### Login
+
+`kakaocli login`은 macOS Keychain에 자격증명을 저장하고, KakaoTalk 앱을 실행하여 실제 로그인까지 자동으로 수행합니다.
+
+`.env` 파일에 자격증명을 미리 설정해 두면 테스트 스크립트에서 활용할 수 있습니다:
+
+```bash
+cp .env.example .env
+```
+
+`.env` 예시:
+
+```dotenv
+# KakaoTalk login credentials (used by `kakaocli login`)
+ID=your-email@example.com
+PASSWORD=your-password
+```
+
+#### 명령어 옵션
+
+```bash
+# 자격증명 저장 + 앱 실행 + 로그인 (인터랙티브 프롬프트)
+./bin/kakaocli-local login
+
+# 이메일/비밀번호를 직접 지정하여 로그인
+./bin/kakaocli-local login --email user@example.com --password mypass
+
+# 자격증명 저장만 (로그인 시도 안 함)
+./bin/kakaocli-local login --save-only
+
+# 로그인 상태 확인
+./bin/kakaocli-local login --status
+
+# 저장된 자격증명 삭제
+./bin/kakaocli-local login --clear
+```
+
+#### 동작 매트릭스
+
+| 시나리오 | 동작 |
+|---------|------|
+| `login` (자격증명 없음) | 프롬프트 → Keychain 저장 → 앱 실행 → 로그인 |
+| `login` (자격증명 있음) | 저장된 자격증명으로 바로 로그인 시도 |
+| `login --email x --password y` | Keychain 저장 → 로그인 |
+| `login --save-only` | 프롬프트 → Keychain 저장만 |
+| `login --status` | 자격증명 저장 여부 + 앱 상태 출력 |
+| `login --clear` | Keychain에서 자격증명 삭제 |
+| 이미 로그인됨 | "Already logged in" 출력, 성공 종료 |
+
 ### Write and automation commands
 
 ```bash
 ./bin/kakaocli-local send "chat name" "message"
 ./bin/kakaocli-local send --me _ "message"
 ./bin/kakaocli-local harvest
-./bin/kakaocli-local login --status
 ```
 
 `send`, `sync`, and `harvest` will launch KakaoTalk and use stored credentials when required.
