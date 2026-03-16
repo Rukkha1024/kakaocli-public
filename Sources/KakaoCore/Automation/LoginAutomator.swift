@@ -34,6 +34,9 @@ public enum LoginAutomator {
 
         fputs("Attempting auto-login...\n", stderr)
 
+        // Dismiss any overlay sheet (e.g. "You have been logged out because you logged in on another device")
+        dismissOverlaySheet(in: loginWindow)
+
         // Find text fields — KakaoTalk uses regular AXTextField for both email and password
         let textFields = AXHelpers.findAll(loginWindow, role: "AXTextField")
         let secureFields = AXHelpers.findAll(loginWindow, role: "AXSecureTextField")
@@ -101,20 +104,38 @@ public enum LoginAutomator {
         // Poll with status bar menu detection since the AX window may not be visible.
         let loginStart = Date()
         let deadline = Date().addingTimeInterval(30.0)
+        var dismissedConfirmation = false
         while Date() < deadline {
             let state = AppLifecycle.detectState(aggressive: false)
             if state == .loggedIn {
                 fputs("Login successful.\n", stderr)
                 return
             }
-            if state == .loginScreen && Date().timeIntervalSince(loginStart) > 5.0 {
-                // Still on login screen after 5s — likely an error
-                let windows = AXHelpers.windows(app)
-                let hasLoginWindow = windows.contains {
-                    AXHelpers.role($0) == "AXWindow" && (AXHelpers.title($0) ?? "").lowercased().contains("log in")
+            if state == .loginScreen {
+                // Check for confirmation sheets (e.g. "logged in on another device") and dismiss them
+                let currentWindows = AXHelpers.windows(app)
+                for window in currentWindows {
+                    let sheets = AXHelpers.findAll(window, role: "AXSheet")
+                    for sheet in sheets {
+                        if !dismissedConfirmation,
+                           let okButton = AXHelpers.findFirst(sheet, role: "AXButton", text: "OK") ??
+                                          AXHelpers.findFirst(sheet, role: "AXButton", text: "확인") {
+                            fputs("Dismissing confirmation dialog...\n", stderr)
+                            _ = AXHelpers.performAction(okButton, kAXPressAction as String)
+                            dismissedConfirmation = true
+                            Thread.sleep(forTimeInterval: 1.0)
+                        }
+                    }
                 }
-                if hasLoginWindow {
-                    try checkForLoginErrors(app: app)
+
+                if Date().timeIntervalSince(loginStart) > 10.0 {
+                    // Still on login screen after 10s — likely an error
+                    let hasLoginWindow = currentWindows.contains {
+                        AXHelpers.role($0) == "AXWindow" && (AXHelpers.title($0) ?? "").lowercased().contains("log in")
+                    }
+                    if hasLoginWindow {
+                        try checkForLoginErrors(app: app)
+                    }
                 }
             }
             Thread.sleep(forTimeInterval: 1.0)
@@ -131,6 +152,23 @@ public enum LoginAutomator {
     }
 
     // MARK: - Private Helpers
+
+    /// Dismiss an AXSheet overlay on the login window (e.g. "logged out on another device" dialog).
+    private static func dismissOverlaySheet(in window: AXUIElement) {
+        let sheets = AXHelpers.findAll(window, role: "AXSheet")
+        for sheet in sheets {
+            // Look for OK/확인 button inside the sheet
+            let candidates = ["OK", "확인"]
+            for text in candidates {
+                if let button = AXHelpers.findFirst(sheet, role: "AXButton", text: text) {
+                    fputs("Dismissing overlay dialog...\n", stderr)
+                    _ = AXHelpers.performAction(button, kAXPressAction as String)
+                    Thread.sleep(forTimeInterval: 0.5)
+                    return
+                }
+            }
+        }
+    }
 
     private static func findEmailLoginTab(in window: AXUIElement) -> AXUIElement? {
         let candidates = ["카카오계정", "이메일", "email", "계정", "Account"]
