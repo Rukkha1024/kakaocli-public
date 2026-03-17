@@ -135,13 +135,85 @@ PASSWORD=your-password
 
 ### Write and automation commands
 
-```bash
-./bin/kakaocli-local send "chat name" "message"
-./bin/kakaocli-local send --me _ "message"
-./bin/kakaocli-local harvest
-```
+| Command | Description |
+|---------|-------------|
+| `./bin/kakaocli-local send "name" "msg"` | Send a message via UI automation |
+| `./bin/kakaocli-local sync --follow` | Watch for new messages in real time (NDJSON) |
+| `./bin/kakaocli-local harvest` | Capture chat names and load message history from UI |
+| `./bin/kakaocli-local inspect` | Dump KakaoTalk UI element tree (for debugging) |
 
 `send`, `sync`, and `harvest` will launch KakaoTalk and use stored credentials when required.
+
+### Sync
+
+`sync`는 로컬 DB를 폴링하여 새 메시지를 실시간으로 감지하고, NDJSON 형식으로 출력합니다.
+
+```bash
+# 현재 high-water mark 확인 (one-shot)
+./bin/kakaocli-local sync
+
+# 실시간 메시지 감시 (Ctrl-C로 중지)
+./bin/kakaocli-local sync --follow
+
+# 웹훅으로 새 메시지 전송
+./bin/kakaocli-local sync --follow --webhook https://example.com/hook
+
+# 폴링 간격 및 시작 지점 지정
+./bin/kakaocli-local sync --follow --interval 5 --since-log-id 123456
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--follow` | off | 지속적으로 새 메시지를 감시 (NDJSON 출력) |
+| `--webhook URL` | – | 새 메시지를 지정한 URL로 POST |
+| `--interval N` | 2 | 폴링 간격 (초) |
+| `--since-log-id N` | latest | 이 logId 이후의 메시지부터 시작 |
+
+### Harvest
+
+`harvest`는 KakaoTalk UI의 채팅 목록에서 표시 이름을 캡처하여 `~/.kakaocli/metadata.json`에 저장합니다. `--scroll` 옵션으로 채팅을 열어 이전 메시지 히스토리를 로딩할 수도 있습니다.
+
+```bash
+# 채팅 이름만 캡처
+./bin/kakaocli-local harvest
+
+# 최근 20개 채팅만 처리
+./bin/kakaocli-local harvest --top 20
+
+# 채팅을 열어 이전 메시지까지 로딩
+./bin/kakaocli-local harvest --scroll --max-clicks 15
+
+# 실행 전 미리보기
+./bin/kakaocli-local harvest --dry-run
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--top N` | all | 최근 N개 채팅만 처리 |
+| `--scroll` | off | 채팅을 열어 "이전 대화 보기" 클릭으로 히스토리 로딩 |
+| `--max-clicks N` | 10 | 채팅당 최대 "이전 대화 보기" 클릭 횟수 |
+| `--scroll-delay N` | 1.5 | 액션 간 대기 시간 (초) |
+| `--dry-run` | off | 실행하지 않고 처리 대상만 표시 |
+
+### Inspect
+
+`inspect`는 KakaoTalk의 UI 요소 트리를 덤프합니다. 자동화 명령(send, harvest 등)을 디버깅할 때 유용합니다.
+
+```bash
+# 전체 UI 트리 덤프
+./bin/kakaocli-local inspect
+
+# 탐색 깊이 제한
+./bin/kakaocli-local inspect --depth 3
+
+# 특정 채팅을 열어 해당 창 UI 트리 덤프
+./bin/kakaocli-local inspect --open-chat "지수"
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--depth N` | 5 | 최대 트리 탐색 깊이 |
+| `--open-chat "name"` | – | 지정한 채팅을 열고 해당 창을 덤프 |
 
 ## Live RAG
 
