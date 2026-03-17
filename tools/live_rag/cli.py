@@ -125,6 +125,7 @@ def _stream_sync_to_store(
 
     total_ingested = 0
     total_inserted = 0
+    last_seen_log_id = 0
     batch: list[dict[str, Any]] = []
 
     def _flush() -> None:
@@ -135,7 +136,7 @@ def _stream_sync_to_store(
         total_ingested += result["accepted"]
         total_inserted += result["inserted"]
         batch.clear()
-        pct = min(100, int(total_ingested / max(max_log_id - since_log_id, 1) * 100))
+        pct = min(100, int(last_seen_log_id / max(max_log_id, 1) * 100)) if last_seen_log_id else 0
         _err(f"\r  Ingested {total_ingested} messages ({pct}%)")
 
     try:
@@ -170,6 +171,7 @@ def _stream_sync_to_store(
                 continue
 
             batch.append(msg)
+            last_seen_log_id = msg["log_id"]
             if len(batch) >= batch_size:
                 _flush()
 
