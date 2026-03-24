@@ -1,5 +1,5 @@
 version: 1
-default_max_member_count: 30
+default_max_member_count: 29
 allow_chat_ids: []
 deny_chat_ids: []
 chat_overrides: {}
