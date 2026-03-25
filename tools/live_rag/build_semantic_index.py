@@ -126,9 +126,10 @@ def build_semantic_index(
         limit=limit,
     )
     if missing_metadata_count > 0:
-        raise RuntimeError(
-            "Chat metadata refresh was incomplete for semantic embedding candidates. "
-            "Aborting before mutating semantic state."
+        print(
+            f"Warning: {missing_metadata_count} embedding candidate message(s) have no chat metadata "
+            "(likely from deleted/inaccessible chats). They will be skipped during indexing.",
+            file=sys.stderr,
         )
 
     if mode == "rebuild":
