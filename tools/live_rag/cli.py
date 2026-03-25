@@ -139,6 +139,7 @@ def _stream_sync_to_store(
         pct = min(100, int(last_seen_log_id / max(max_log_id, 1) * 100)) if last_seen_log_id else 0
         _err(f"\r  Ingested {total_ingested} messages ({pct}%)")
 
+    idle_extensions = 0
     try:
         last_activity = time.monotonic()
         while True:
@@ -150,7 +151,10 @@ def _stream_sync_to_store(
                     current = store.last_ingested_log_id() or 0
                     if current >= max_log_id:
                         break
-                    # Still waiting — extend timeout
+                    idle_extensions += 1
+                    if idle_extensions >= 3:
+                        # No new messages after 3 consecutive idle windows — accept partial sync
+                        break
                     last_activity = time.monotonic()
                 continue
 
@@ -159,6 +163,7 @@ def _stream_sync_to_store(
                 break
 
             last_activity = time.monotonic()
+            idle_extensions = 0
             line = line.strip()
             if not line:
                 continue
