@@ -63,3 +63,29 @@ import Testing
 
     #expect(decision == .unknown)
 }
+
+@Test func testClassifyMainWindowSkipsLogoLookupWhenChatListIsPresent() {
+    var logoLookupCalled = false
+
+    let state = AppLifecycle.classifyMainWindow(
+        title: "KakaoTalk",
+        hasChatList: true,
+        hasLoginLogo: {
+            logoLookupCalled = true
+            return true
+        }
+    )
+
+    #expect(state == .loggedIn)
+    #expect(logoLookupCalled == false)
+}
+
+@Test func testClassifyMainWindowUsesTitleForLoginScreen() {
+    let state = AppLifecycle.classifyMainWindow(
+        title: "Log in",
+        hasChatList: false,
+        hasLoginLogo: { false }
+    )
+
+    #expect(state == .loginScreen)
+}

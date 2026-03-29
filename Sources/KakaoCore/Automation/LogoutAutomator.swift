@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import CoreGraphics
 import Foundation
 
 public enum LogoutResult: Sendable, Equatable {
@@ -22,38 +23,13 @@ public enum LogoutAutomator {
             return .appNotRunning
         }
 
-        try? AXHelpers.activateApp(bundleId: AppLifecycle.bundleId)
-        Thread.sleep(forTimeInterval: 0.3)
-
-        let appState = AppLifecycle.detectState()
-        if appState == .loginScreen {
+        if AppLifecycle.isLoginScreenVisible() || isOnscreenLoginWindowVisible() {
             return .alreadyLoggedOut
         }
 
-        let loginScreenVisible = AppLifecycle.isLoginScreenVisible()
-        let initialDecision = preflightDecision(
-            appRunning: true,
-            menuItems: loginScreenVisible ? [] : try statusBarMenuItems(),
-            loginScreenVisible: loginScreenVisible
-        )
-
-        switch initialDecision {
-        case .appOff:
-            return .appNotRunning
-        case .alreadyLoggedOut:
-            return .alreadyLoggedOut
-        case .performLogout(let menuTitle):
-            try clickStatusBarMenuItem(named: menuTitle)
-            try waitForLoginScreen()
-            return .loggedOut
-        case .unknown:
-            try? AXHelpers.activateApp(bundleId: AppLifecycle.bundleId)
-            Thread.sleep(forTimeInterval: 0.5)
-            if AppLifecycle.isLoginScreenVisible() {
-                return .alreadyLoggedOut
-            }
-            throw LogoutError.unknownState
-        }
+        try clickLogoutMenuItem()
+        try waitForLoginScreen()
+        return .loggedOut
     }
 
     static func parseMenuItems(_ rawOutput: String) -> [String] {
@@ -123,15 +99,30 @@ public enum LogoutAutomator {
         return parseMenuItems(rawOutput)
     }
 
-    private static func clickStatusBarMenuItem(named menuTitle: String) throws {
-        let escapedTitle = menuTitle.replacingOccurrences(of: "\"", with: "\\\"")
+    private static func clickLogoutMenuItem() throws {
+        if clickLogoutMenuItemViaStatusBar() {
+            return
+        }
+
+        if clickLogoutMenuItemViaAX() {
+            return
+        }
+
+        throw LogoutError.menuActionFailed("error: could not activate KakaoTalk status bar logout menu")
+    }
+
+    private static func clickLogoutMenuItemViaStatusBar() -> Bool {
         let script = """
         tell application "System Events"
             tell process "KakaoTalk"
                 try
                     click menu bar item 1 of menu bar 2
                     delay 0.3
-                    click menu item "\(escapedTitle)" of menu 1 of menu bar item 1 of menu bar 2
+                    try
+                        click menu item "Log out" of menu 1 of menu bar item 1 of menu bar 2
+                    on error
+                        click menu item "로그아웃" of menu 1 of menu bar item 1 of menu bar 2
+                    end try
                     return "ok"
                 on error errMsg
                     try
@@ -142,21 +133,53 @@ public enum LogoutAutomator {
             end tell
         end tell
         """
-        let output = runAppleScript(script)
-        guard output.contains("ok") else {
-            throw LogoutError.menuActionFailed(output.trimmingCharacters(in: .whitespacesAndNewlines))
-        }
+        return runAppleScript(script).contains("ok")
     }
 
-    private static func waitForLoginScreen(timeout: TimeInterval = 15.0) throws {
+    private static func clickLogoutMenuItemViaAX() -> Bool {
+        try? AXHelpers.activateApp(bundleId: AppLifecycle.bundleId)
+        guard let app = try? AXHelpers.appElement(bundleId: AppLifecycle.bundleId) else {
+            return false
+        }
+
+        guard let appMenu = AXHelpers.findFirst(app, role: "AXMenuBarItem", text: "KakaoTalk") else {
+            return false
+        }
+        guard AXHelpers.performAction(appMenu, kAXPressAction as String) else {
+            return false
+        }
+
+        Thread.sleep(forTimeInterval: 0.2)
+
+        if let logoutMenu = AXHelpers.findFirst(app, role: "AXMenuItem", text: "Log out") ??
+            AXHelpers.findFirst(app, role: "AXMenuItem", text: "로그아웃") {
+            return AXHelpers.performAction(logoutMenu, kAXPressAction as String)
+        }
+        return false
+    }
+
+    private static func waitForLoginScreen(timeout: TimeInterval = 30.0) throws {
+        Thread.sleep(forTimeInterval: 0.8)
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            try? AXHelpers.activateApp(bundleId: AppLifecycle.bundleId)
-            dismissConfirmationIfNeeded()
-            if AppLifecycle.isLoginScreenVisible() {
+            let state = AppLifecycle.detectState(aggressive: false)
+            if state == .loginScreen || AppLifecycle.isLoginScreenVisible() || isOnscreenLoginWindowVisible() {
+                return
+            }
+
+            if state == .unknown || state == .launching {
+                dismissConfirmationIfNeeded()
+            }
+
+            if AppLifecycle.isLoginScreenVisible() || isOnscreenLoginWindowVisible() {
                 return
             }
             Thread.sleep(forTimeInterval: 0.5)
+        }
+
+        let finalState = AppLifecycle.detectState()
+        if finalState == .loginScreen || AppLifecycle.isLoginScreenVisible() || isOnscreenLoginWindowVisible() {
+            return
         }
         throw LogoutError.timeout
     }
@@ -170,20 +193,63 @@ public enum LogoutAutomator {
         let candidates = ["OK", "확인", "Log out", "로그아웃", "Logout"]
 
         for window in AXHelpers.windows(axApp) {
-            for text in candidates {
-                if let button = AXHelpers.findFirst(window, role: "AXButton", text: text) {
+            if let button = nearbyButton(in: window, matchingAny: candidates, maxDepth: 2) {
+                _ = AXHelpers.performAction(button, kAXPressAction as String)
+                Thread.sleep(forTimeInterval: 0.3)
+                return
+            }
+
+            let directSheets = AXHelpers.children(window).filter { AXHelpers.role($0) == "AXSheet" }
+            for sheet in directSheets {
+                if let button = nearbyButton(in: sheet, matchingAny: candidates, maxDepth: 3) {
                     _ = AXHelpers.performAction(button, kAXPressAction as String)
                     Thread.sleep(forTimeInterval: 0.3)
                     return
                 }
-                for sheet in AXHelpers.findAll(window, role: "AXSheet") {
-                    if let button = AXHelpers.findFirst(sheet, role: "AXButton", text: text) {
-                        _ = AXHelpers.performAction(button, kAXPressAction as String)
-                        Thread.sleep(forTimeInterval: 0.3)
-                        return
-                    }
-                }
             }
+        }
+    }
+
+    private static func nearbyButton(in element: AXUIElement, matchingAny candidates: [String], maxDepth: Int, depth: Int = 0) -> AXUIElement? {
+        guard depth <= maxDepth else {
+            return nil
+        }
+
+        for child in AXHelpers.children(element) where AXHelpers.role(child) == "AXButton" {
+            let label = (AXHelpers.title(child) ?? AXHelpers.value(child) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if candidates.contains(where: { label.localizedCaseInsensitiveContains($0) }) {
+                return child
+            }
+        }
+
+        for child in AXHelpers.children(element) {
+            if let button = nearbyButton(in: child, matchingAny: candidates, maxDepth: maxDepth, depth: depth + 1) {
+                return button
+            }
+        }
+        return nil
+    }
+
+    private static func isOnscreenLoginWindowVisible() -> Bool {
+        let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
+        return windows.contains { window in
+            guard let owner = window[kCGWindowOwnerName as String] as? String, owner == "KakaoTalk" else {
+                return false
+            }
+            guard let name = window[kCGWindowName as String] as? String else {
+                return false
+            }
+            guard name.lowercased().contains("log in") || name == "로그인" else {
+                return false
+            }
+            guard let bounds = window[kCGWindowBounds as String] as? [String: Any],
+                  let width = bounds["Width"] as? Double,
+                  let height = bounds["Height"] as? Double,
+                  width >= 200, height >= 300 else {
+                return false
+            }
+            let alpha = window[kCGWindowAlpha as String] as? Double ?? 1.0
+            return alpha > 0.0
         }
     }
 

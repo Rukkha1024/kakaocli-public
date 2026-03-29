@@ -90,13 +90,11 @@ public enum AppLifecycle {
     private static func classifyWindow(_ window: AXUIElement) -> KakaoAppState {
         let id = AXHelpers.identifier(window)
         if id == "Main Window" {
-            if isLoginWindow(window) {
-                return .loginScreen
-            }
-            if AXHelpers.chatListTable(window) != nil {
-                return .loggedIn
-            }
-            return .loggedIn
+            return classifyMainWindow(
+                title: AXHelpers.title(window) ?? "",
+                hasChatList: AXHelpers.chatListTable(window) != nil,
+                hasLoginLogo: { AXHelpers.findFirst(window, role: "AXImage", identifier: "Logo") != nil }
+            )
         }
         // Check for update dialog
         if AXHelpers.findFirst(window, role: "AXButton", text: "update") != nil ||
@@ -108,10 +106,39 @@ public enum AppLifecycle {
 
     private static func isLoginWindow(_ window: AXUIElement) -> Bool {
         let title = AXHelpers.title(window) ?? ""
+        if AXHelpers.identifier(window) == "Main Window" {
+            return classifyMainWindow(
+                title: title,
+                hasChatList: AXHelpers.chatListTable(window) != nil,
+                hasLoginLogo: { AXHelpers.findFirst(window, role: "AXImage", identifier: "Logo") != nil }
+            ) == .loginScreen
+        }
+
         if title.lowercased().contains("log in") || title == "로그인" {
             return true
         }
         return AXHelpers.findFirst(window, role: "AXImage", identifier: "Logo") != nil
+    }
+
+    static func classifyMainWindow(
+        title: String,
+        hasChatList: Bool,
+        hasLoginLogo: () -> Bool
+    ) -> KakaoAppState {
+        if hasChatList {
+            return .loggedIn
+        }
+
+        let normalizedTitle = title.lowercased()
+        if normalizedTitle.contains("log in") || title == "로그인" {
+            return .loginScreen
+        }
+
+        if hasLoginLogo() {
+            return .loginScreen
+        }
+
+        return .loggedIn
     }
 
     /// Check KakaoTalk's status bar menu to determine login state.
