@@ -77,15 +77,20 @@ public enum AppLifecycle {
         return .unknown
     }
 
+    static func isLoginScreenVisible() -> Bool {
+        guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).first else {
+            return false
+        }
+
+        let axApp = AXUIElementCreateApplication(app.processIdentifier)
+        return AXHelpers.windows(axApp).contains(where: isLoginWindow(_:))
+    }
+
     /// Classify a real AXWindow element as login screen or logged in.
     private static func classifyWindow(_ window: AXUIElement) -> KakaoAppState {
         let id = AXHelpers.identifier(window)
         if id == "Main Window" {
-            let title = AXHelpers.title(window) ?? ""
-            if title.lowercased().contains("log in") || title == "로그인" {
-                return .loginScreen
-            }
-            if AXHelpers.findFirst(window, role: "AXImage", identifier: "Logo") != nil {
+            if isLoginWindow(window) {
                 return .loginScreen
             }
             if AXHelpers.chatListTable(window) != nil {
@@ -99,6 +104,14 @@ public enum AppLifecycle {
             return .updateRequired
         }
         return .loginScreen
+    }
+
+    private static func isLoginWindow(_ window: AXUIElement) -> Bool {
+        let title = AXHelpers.title(window) ?? ""
+        if title.lowercased().contains("log in") || title == "로그인" {
+            return true
+        }
+        return AXHelpers.findFirst(window, role: "AXImage", identifier: "Logo") != nil
     }
 
     /// Check KakaoTalk's status bar menu to determine login state.
