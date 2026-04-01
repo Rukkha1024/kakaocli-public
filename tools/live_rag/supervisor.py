@@ -44,6 +44,7 @@ class LiveRAGSupervisor:
 
         sync_process: subprocess.Popen[str] | None = None
         if self.service_mode == "follow":
+            self._ensure_kakao_running()
             sync_process = self._spawn_sync()
             self.processes.append(sync_process)
 
@@ -59,6 +60,7 @@ class LiveRAGSupervisor:
                 if self.stopping:
                     break
                 time.sleep(3.0)
+                self._ensure_kakao_running()
                 sync_process = self._spawn_sync()
                 self.processes[-1] = sync_process
 
@@ -74,6 +76,22 @@ class LiveRAGSupervisor:
     def _handle_signal(self, signum: int, _frame: object) -> None:
         self.stopping = True
         print(f"live-rag supervisor received signal {signum}", flush=True)
+
+    def _ensure_kakao_running(self) -> None:
+        """Launch KakaoTalk via ``kakaocli login`` if not running."""
+        try:
+            result = subprocess.run(
+                [str(self.binary), "login", "--status"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if "notRunning" in result.stdout:
+                print("KakaoTalk not running — launching via kakaocli login", flush=True)
+                subprocess.run(
+                    [str(self.binary), "login"],
+                    capture_output=True, text=True, timeout=30,
+                )
+        except Exception as exc:
+            print(f"kakao launch check failed: {exc}", flush=True)
 
     def _spawn_app(self) -> subprocess.Popen[str]:
         env = os.environ.copy()

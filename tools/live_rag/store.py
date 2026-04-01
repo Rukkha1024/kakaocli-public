@@ -176,13 +176,60 @@ class LiveRAGStore:
         )
         connection.commit()
 
+    def _ineligible_chat_ids(
+        self, max_member_count: int = 30, connection: sqlite3.Connection | None = None,
+    ) -> set[int]:
+        """Return chat_ids that exceed the member count threshold."""
+        conn = connection or self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT chat_id FROM chat_metadata WHERE member_count > ?",
+                (max_member_count,),
+            ).fetchall()
+            return {int(row["chat_id"]) for row in rows}
+        finally:
+            if connection is None:
+                conn.close()
+
+    def purge_ineligible_chats(self, max_member_count: int = 30) -> dict[str, Any]:
+        """Delete all stored data for chats exceeding the member count threshold."""
+        ineligible = self._ineligible_chat_ids(max_member_count)
+        if not ineligible:
+            return {"purged": 0, "chat_ids": []}
+
+        ids = sorted(ineligible)
+        placeholders = ",".join("?" for _ in ids)
+        with self._connect() as connection:
+            connection.execute(
+                f"DELETE FROM messages_fts WHERE rowid IN "
+                f"(SELECT log_id FROM messages WHERE chat_id IN ({placeholders}))",
+                ids,
+            )
+            cursor = connection.execute(
+                f"DELETE FROM messages WHERE chat_id IN ({placeholders})",
+                ids,
+            )
+            connection.execute(
+                f"DELETE FROM semantic_chunks WHERE chat_id IN ({placeholders})",
+                ids,
+            )
+            connection.commit()
+            return {"purged": cursor.rowcount, "chat_ids": ids}
+
     def ingest_messages(self, messages: list[dict[str, Any]], source: str = "webhook") -> dict[str, int]:
         normalized = [self._normalize_message(message) for message in messages]
         if not normalized:
-            return {"accepted": 0, "inserted": 0}
+            return {"accepted": 0, "inserted": 0, "filtered": 0}
 
         log_ids = [message["log_id"] for message in normalized]
         with self._connect() as connection:
+            ineligible = self._ineligible_chat_ids(connection=connection)
+            pre_filter_count = len(normalized)
+            normalized = [m for m in normalized if m["chat_id"] not in ineligible]
+            filtered_count = pre_filter_count - len(normalized)
+            if not normalized:
+                return {"accepted": pre_filter_count, "inserted": 0, "filtered": filtered_count}
+            log_ids = [message["log_id"] for message in normalized]
             current_checkpoint = self._get_int_state(connection, "last_ingested_log_id")
             existing = {
                 row["log_id"]
@@ -260,7 +307,7 @@ class LiveRAGStore:
             self._set_state(connection, "last_ingest_source", source)
             connection.commit()
 
-        return {"accepted": len(normalized), "inserted": inserted}
+        return {"accepted": pre_filter_count, "inserted": inserted, "filtered": filtered_count}
 
     def stats(self) -> dict[str, Any]:
         with self._connect() as connection:
@@ -826,6 +873,15 @@ class LiveRAGStore:
         with self._connect() as connection:
             return self._get_int_state(connection, "last_ingested_log_id")
 
+    @staticmethod
+    def _fts_or_query(query: str) -> str:
+        """Convert a natural-language query to FTS5 OR expression for better recall."""
+        tokens = query.split()
+        if len(tokens) <= 1:
+            return query
+        escaped = [f'"{t}"' for t in tokens]
+        return " OR ".join(escaped)
+
     def _fts_hits(
         self,
         *,
@@ -837,8 +893,9 @@ class LiveRAGStore:
         context_before: int,
         context_after: int,
     ) -> list[dict[str, Any]]:
+        fts_query = self._fts_or_query(query)
         clauses = ["messages_fts MATCH ?"]
-        params: list[Any] = [query]
+        params: list[Any] = [fts_query]
 
         if chat_id is not None:
             clauses.append("m.chat_id = ?")

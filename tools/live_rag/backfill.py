@@ -111,6 +111,7 @@ def main() -> None:
     parser.add_argument("--chat-id", type=int)
     parser.add_argument("--limit", type=int, default=500)
     parser.add_argument("--limit-chats", type=int, default=50)
+    parser.add_argument("--purge", action="store_true", help="Purge messages from chats exceeding max member count after metadata refresh")
     args = parser.parse_args()
 
     targets = resolve_targets(
@@ -124,6 +125,10 @@ def main() -> None:
 
     store = LiveRAGStore(Path(args.db_path))
     store.upsert_chat_metadata(targets)
+
+    if args.purge:
+        purge_result = store.purge_ineligible_chats()
+        print(json.dumps({"purge": purge_result}, ensure_ascii=False, sort_keys=True))
 
     total_messages = 0
     total_inserted = 0
